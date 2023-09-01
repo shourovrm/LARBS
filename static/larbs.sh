@@ -86,6 +86,7 @@ refreshkeys() {
 		whiptail --infobox "Enabling Arch Repositories for more a more extensive software collection..." 7 40
 		if ! grep -q "^\[universe\]" /etc/pacman.conf; then
 			echo "[universe]
+Server = http://mirror.xeonbd.com/archlinux/\$arch
 Server = https://universe.artixlinux.org/\$arch
 Server = https://mirror1.artixlinux.org/universe/\$arch
 Server = https://mirror.pascalpuffke.de/artix-universe/\$arch
