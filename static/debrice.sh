@@ -35,31 +35,39 @@ welcomemsg() {
 }
 
 getuserandpass() {
+    # Prompts user for new username and password.
     echo "First, please enter a name for the user account."
-    read -p "Username: " name
+    read -r name
     while ! echo "$name" | grep -q "^[a-z_][a-z0-9_-]*$"; do
-        read -p "Username not valid. Give a username beginning with a letter, with only lowercase letters, - or _: " name
+        echo "Username not valid. Give a username beginning with a letter, with only lowercase letters, - or _."
+        read -r name
     done
-    read -s -p "Enter a password: " pass1
-    echo
-    read -s -p "Retype password: " pass2
-    echo
+    echo "Enter a password for that user."
+    stty -echo
+    read -r pass1
+    stty echo
+    echo "Retype password."
+    stty -echo
+    read -r pass2
+    stty echo
     while [ "$pass1" != "$pass2" ]; do
-        echo "Passwords do not match."
-        read -s -p "Enter password again: " pass1
-        echo
-        read -s -p "Retype password: " pass2
-        echo
+        echo "Passwords do not match. Enter password again."
+        stty -echo
+        read -r pass1
+        stty echo
+        echo "Retype password."
+        stty -echo
+        read -r pass2
+        stty echo
     done
 }
 
 usercheck() {
     if id -u "$name" >/dev/null 2>&1; then
-        echo "The user '$name' already exists on this system."
-        echo "LARBS can install for a user already existing, but it will OVERWRITE any conflicting settings/dotfiles on the user account."
-        read -p "Continue? (y/n): " choice
-	[ "$choice" = "y" -o "$choice" = "Y" ] || exit 1
-        # [[ "$choice" == [yY] ]] || exit 1
+        echo "The user '$name' already exists on this system. LARBS can install for a user already existing, but it will OVERWRITE any conflicting settings/dotfiles on the user account. LARBS will NOT overwrite your user files, documents, videos, etc., so don't worry about that. Only proceed if you don't mind your settings being overwritten. Note also that LARBS will change $name's password to the one you just gave."
+        echo "Continue? (y/n): "
+        read -r choice
+        [ "$choice" = "y" ] || [ "$choice" = "Y" ] || exit 1
     fi
 }
 
@@ -69,6 +77,19 @@ preinstallmsg() {
     read -p "Let's go? (y/n): " choice
     [ "$choice" = "y" -o "$choice" = "Y" ] || exit 1
     # [[ "$choice" == [yY] ]] || exit 1
+}
+
+
+adduserandpass() {
+	# Adds user `$name` with password $pass1.
+	echo "Adding user \"$name\"..." 7 50
+	useradd -m -s /bin/zsh "$name" >/dev/null 2>&1 ||
+		usermod -a -G sudo "$name" && mkdir -p /home/"$name" && chown "$name":wheel /home/"$name"
+	export repodir="/home/$name/.local/src"
+	mkdir -p "$repodir"
+	chown -R "$name":"sudo" "$(dirname "$repodir")"
+	echo "$name:$pass1" | chpasswd
+	unset pass1 pass2
 }
 
 adduserandpass() {
