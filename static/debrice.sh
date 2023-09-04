@@ -7,7 +7,10 @@
 ### OPTIONS AND VARIABLES ###
 
 dotfilesrepo="https://github.com/shourovrm/archrice.git"
-progsfile="https://raw.githubusercontent.com/shourovrm/LARBS/master/static/dprogs.csv"
+#progsfile="https://raw.githubusercontent.com/shourovrm/LARBS/master/static/dprogs.csv"
+
+progsfile=/root/dprogs.csv
+
 repobranch="master"
 export TERM=ansi
 
