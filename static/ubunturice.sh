@@ -47,18 +47,32 @@ getuserandpass() {
     done
 
     echo "Enter a password for that user."
-    read -rs pass1
+    stty -echo
+    read -r pass1
+    stty echo
+    echo
 
     echo "Retype password."
-    read -rs pass2
+    stty -echo
+    read -r pass2
+    stty echo
+    echo
 
     while [ "$pass1" != "$pass2" ]; do
         echo "Passwords do not match. Enter password again."
-        read -rs pass1
+        stty -echo
+        read -r pass1
+        stty echo
+        echo
+
         echo "Retype password."
-        read -rs pass2
+        stty -echo
+        read -r pass2
+        stty echo
+        echo
     done
 }
+
 
 usercheck() {
     if id -u "$name" >/dev/null 2>&1; then
