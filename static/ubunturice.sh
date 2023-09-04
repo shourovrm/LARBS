@@ -35,22 +35,28 @@ welcomemsg() {
 
 ### Check if the above changes are committted
 
+
+
 getuserandpass() {
+    # Prompts user for new username and password.
     echo "First, please enter a name for the user account."
-    read -p "Username: " name
+    read -r name
     while ! echo "$name" | grep -q "^[a-z_][a-z0-9_-]*$"; do
-        read -p "Username not valid. Give a username beginning with a letter, with only lowercase letters, - or _: " name
+        echo "Username not valid. Give a username beginning with a letter, with only lowercase letters, - or _."
+        read -r name
     done
-    read -s -p "Enter a password: " pass1
-    echo
-    read -s -p "Retype password: " pass2
-    echo
+
+    echo "Enter a password for that user."
+    read -rs pass1
+
+    echo "Retype password."
+    read -rs pass2
+
     while [ "$pass1" != "$pass2" ]; do
-        echo "Passwords do not match."
-        read -s -p "Enter password again: " pass1
-        echo
-        read -s -p "Retype password: " pass2
-        echo
+        echo "Passwords do not match. Enter password again."
+        read -rs pass1
+        echo "Retype password."
+        read -rs pass2
     done
 }
 
