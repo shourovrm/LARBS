@@ -30,7 +30,7 @@ welcomemsg() {
     echo "Be sure the computer you are using has current pacman updates and refreshed Arch keyrings."
     echo "If it does not, the installation of some programs might fail."
     read -p "All ready? (y/n): " choice
-    [[ "$choice" == [yY] ]] || exit 1
+    [ "$choice" = "y" -o "$choice" = "Y" ] || exit 1
 }
 
 getuserandpass() {
@@ -57,7 +57,7 @@ usercheck() {
         echo "The user '$name' already exists on this system."
         echo "LARBS can install for a user already existing, but it will OVERWRITE any conflicting settings/dotfiles on the user account."
         read -p "Continue? (y/n): " choice
-        [[ "$choice" == [yY] ]] || exit 1
+        [ "$choice" = "y" -o "$choice" = "Y" ] || exit 1
     fi
 }
 
@@ -65,7 +65,7 @@ preinstallmsg() {
     echo "The rest of the installation will now be totally automated, so you can sit back and relax."
     echo "It will take some time, but when done, you can relax even more with your complete system."
     read -p "Let's go? (y/n): " choice
-    [[ "$choice" == [yY] ]] || exit 1
+    [ "$choice" = "y" -o "$choice" = "Y" ] || exit 1
 }
 
 adduserandpass() {
