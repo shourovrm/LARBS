@@ -307,7 +307,7 @@ preinstallmsg || error "User exited."
 refreshkeys ||
 	error "Error automatically refreshing Arch keyring. Consider doing so manually."
 
-for x in curl ca-certificates build-essential git ntp zsh; do
+for x in curl ca-certificates build-essential git zsh; do
 	echo "LARBS Installation" 
 		echo "Installing \`$x\` which is required to install and configure other programs." 
 	installpkg "$x"
@@ -351,8 +351,8 @@ rm -rf "/home/$name/.git/" "/home/$name/README.md" "/home/$name/LICENSE" "/home/
 
 
 # Most important command! Get rid of the beep!
-rmmod pcspkr
-echo "blacklist pcspkr" >/etc/modprobe.d/nobeep.conf
+# rmmod pcspkr
+# echo "blacklist pcspkr" >/etc/modprobe.d/nobeep.conf
 
 # Make zsh the default shell for the user.
 chsh -s /bin/zsh "$name" >/dev/null 2>&1
