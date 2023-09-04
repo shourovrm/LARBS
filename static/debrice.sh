@@ -84,7 +84,7 @@ adduserandpass() {
 	# Adds user `$name` with password $pass1.
 	echo "Adding user \"$name\"..." 7 50
 	useradd -m -s /bin/zsh "$name" >/dev/null 2>&1 ||
-		usermod -a -G sudo "$name" && mkdir -p /home/"$name" && chown "$name":wheel /home/"$name"
+		usermod -a -G sudo "$name" && mkdir -p /home/"$name" && chown "$name":sudo /home/"$name"
 	export repodir="/home/$name/.local/src"
 	mkdir -p "$repodir"
 	chown -R "$name":"sudo" "$(dirname "$repodir")"
@@ -276,7 +276,7 @@ makeuserjs(){
 	ln -fs "/home/$name/.config/firefox/larbs.js" "$overrides"
 	[ ! -f "$arkenfox" ] && curl -sL "https://raw.githubusercontent.com/arkenfox/user.js/master/user.js" > "$arkenfox"
 	cat "$arkenfox" "$overrides" > "$userjs"
-	chown "$name:wheel" "$arkenfox" "$userjs"
+	chown "$name:sudo" "$arkenfox" "$userjs"
 	# Install the updating script.
 	mkdir -p /usr/local/lib /etc/pacman.d/hooks
 	cp "/home/$name/.local/bin/arkenfox-auto-update" /usr/local/lib/
@@ -447,7 +447,7 @@ pkill -u "$name" librewolf
 
 # Allow wheel/sudo users to sudo with password and allow several system commands
 # (like `shutdown` to run without password).
-echo "%sudo ALL=(ALL:ALL) ALL" > /etc/sudoers.d/00-larbs-wheel-can-sudo
+echo "%sudo ALL=(ALL:ALL) ALL" > /etc/sudoers.d/00-larbs-sudo-can-sudo
 echo "%sudo ALL=(ALL:ALL) NOPASSWD: /usr/sbin/shutdown,/usr/sbin/reboot,/usr/bin/systemctl suspend,/usr/sbin/mount,/usr/sbin/umount,/usr/bin/apt update,/usr/bin/apt upgrade,/usr/bin/apt dist-upgrade,/usr/bin/loadkeys" > /etc/sudoers.d/01-larbs-cmds-without-password
 echo "Defaults editor=/usr/bin/nvim" > /etc/sudoers.d/02-larbs-visudo-editor
 
