@@ -72,35 +72,30 @@ preinstallmsg() {
 }
 
 adduserandpass() {
-    # Adds user `$name` with password $pass1.
     echo "Adding user \"$name\"..."
-
-    # Create the user with zsh as the default shell
-    useradd -m -s /bin/zsh "$name"
-    if [ $? -ne 0 ]; then
-        echo "Failed to add user."
-        return 1
+    if id "$name" &>/dev/null; then
+        echo "User $name already exists. Updating user settings..."
+        usermod -a -G sudo "$name" || {
+            echo "Failed to add user to sudo group."
+            exit 1
+        }
+    else
+        useradd -m -s /bin/zsh "$name" || {
+            echo "Failed to add user."
+            exit 1
+        }
+        usermod -a -G sudo "$name" || {
+            echo "Failed to add user to sudo group."
+            exit 1
+        }
     fi
-
-    # Add the user to the sudo group
-    usermod -a -G sudo "$name"
-    if [ $? -ne 0 ]; then
-        echo "Failed to add user to sudo group."
-        return 1
-    fi
-
-    # Create directories and set permissions
-    mkdir -p /home/"$name"
-    chown "$name":sudo /home/"$name"
-    export repodir="/home/$name/.local/src"
-    mkdir -p "$repodir"
-    chown -R "$name":sudo "$(dirname "$repodir")"
-
-    # Set the user password
-    echo "$name:$pass1" | chpasswd
-
+    echo "$name:$pass1" | chpasswd || {
+        echo "Failed to set password."
+        exit 1
+    }
     unset pass1 pass2
 }
+
 
 
 # adduserandpass() {
@@ -334,8 +329,8 @@ preinstallmsg || error "User exited."
 ### The rest of the script requires no user input.
 
 # Refresh Arch keyrings.
-refreshkeys ||
-	error "Error automatically refreshing Arch keyring. Consider doing so manually."
+#refreshkeys ||
+#	error "Error automatically refreshing Arch keyring. Consider doing so manually."
 
 # Install essential packages
 for x in curl ca-certificates build-essential git ntp zsh; do
