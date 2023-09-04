@@ -33,6 +33,8 @@ welcomemsg() {
     [ "$choice" = "y" -o "$choice" = "Y" ] || exit 1
 }
 
+### Check if the above changes are committted
+
 getuserandpass() {
     echo "First, please enter a name for the user account."
     read -p "Username: " name
