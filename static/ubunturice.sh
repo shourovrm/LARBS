@@ -340,6 +340,11 @@ echo "MAKEFLAGS=\"-j$(nproc)\"" >> /etc/environment
 # Make sure .*-git AUR packages get updated automatically.
 # $aurhelper -Y --save --devel
 
+# The command that does all the installing. Reads the progs.csv file and
+# installs each needed program the way required. Be sure to run this only after
+# the user has been created and has priviledges to run sudo without a password
+# and all build dependencies are installed.
+installationloop
 
 # Install the dotfiles in the user's home directory, but remove .git dir and
 # other unnecessary files.
