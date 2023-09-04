@@ -95,32 +95,6 @@ adduserandpass() {
 	unset pass1 pass2
 }
 
-adduserandpass() {
-    echo "Adding user \"$name\"..."
-    if id "$name" &>/dev/null; then
-        echo "User $name already exists. Updating user settings..."
-        usermod -a -G sudo "$name" || {
-            echo "Failed to add user to sudo group."
-            exit 1
-        }
-    else
-        useradd -m -s /bin/zsh "$name" || {
-            echo "Failed to add user."
-            exit 1
-        }
-        usermod -a -G sudo "$name" || {
-            echo "Failed to add user to sudo group."
-            exit 1
-        }
-    fi
-    echo "$name:$pass1" | chpasswd || {
-        echo "Failed to set password."
-        exit 1
-    }
-    unset pass1 pass2
-}
-
-
 
 # adduserandpass() {
 #     # Adds user `$name` with password $pass1.
