@@ -23,80 +23,117 @@ error() {
 	exit 1
 }
 
-
 welcomemsg() {
-	whiptail --title "Welcome!" \
-		--msgbox "Welcome to Luke's Auto-Rice Bootstrapping Script!\\n\\nThis script will automatically install a fully-featured Linux desktop, which I use as my main machine.\\n\\n-Luke" 10 60
-
-	whiptail --title "Important Note!" --yes-button "All ready!" \
-		--no-button "Return..." \
-		--yesno "Be sure the computer you are using has current pacman updates and refreshed Arch keyrings.\\n\\nIf it does not, the installation of some programs might fail." 8 70
+    echo "Welcome to Luke's Auto-Rice Bootstrapping Script!"
+    echo "This script will automatically install a fully-featured Linux desktop, which I use as my main machine."
+    echo "-Luke"
+    echo "Be sure the computer you are using has current pacman updates and refreshed Arch keyrings."
+    echo "If it does not, the installation of some programs might fail."
+    read -p "All ready? (y/n): " choice
+    [ "$choice" = "y" -o "$choice" = "Y" ] || exit 1
+    # [[ "$choice" == [yY] ]] || exit 1
 }
 
 getuserandpass() {
-	# Prompts user for new username an password.
-	name=$(whiptail --inputbox "First, please enter a name for the user account." 10 60 3>&1 1>&2 2>&3 3>&1) || exit 1
-	while ! echo "$name" | grep -q "^[a-z_][a-z0-9_-]*$"; do
-		name=$(whiptail --nocancel --inputbox "Username not valid. Give a username beginning with a letter, with only lowercase letters, - or _." 10 60 3>&1 1>&2 2>&3 3>&1)
-	done
-	pass1=$(whiptail --nocancel --passwordbox "Enter a password for that user." 10 60 3>&1 1>&2 2>&3 3>&1)
-	pass2=$(whiptail --nocancel --passwordbox "Retype password." 10 60 3>&1 1>&2 2>&3 3>&1)
-	while ! [ "$pass1" = "$pass2" ]; do
-		unset pass2
-		pass1=$(whiptail --nocancel --passwordbox "Passwords do not match.\\n\\nEnter password again." 10 60 3>&1 1>&2 2>&3 3>&1)
-		pass2=$(whiptail --nocancel --passwordbox "Retype password." 10 60 3>&1 1>&2 2>&3 3>&1)
-	done
+    echo "First, please enter a name for the user account."
+    read -p "Username: " name
+    while ! echo "$name" | grep -q "^[a-z_][a-z0-9_-]*$"; do
+        read -p "Username not valid. Give a username beginning with a letter, with only lowercase letters, - or _: " name
+    done
+    read -s -p "Enter a password: " pass1
+    echo
+    read -s -p "Retype password: " pass2
+    echo
+    while [ "$pass1" != "$pass2" ]; do
+        echo "Passwords do not match."
+        read -s -p "Enter password again: " pass1
+        echo
+        read -s -p "Retype password: " pass2
+        echo
+    done
 }
 
 usercheck() {
-	! { id -u "$name" >/dev/null 2>&1; } ||
-		whiptail --title "WARNING" --yes-button "CONTINUE" \
-			--no-button "No wait..." \
-			--yesno "The user \`$name\` already exists on this system. LARBS can install for a user already existing, but it will OVERWRITE any conflicting settings/dotfiles on the user account.\\n\\nLARBS will NOT overwrite your user files, documents, videos, etc., so don't worry about that, but only click <CONTINUE> if you don't mind your settings being overwritten.\\n\\nNote also that LARBS will change $name's password to the one you just gave." 14 70
+    if id -u "$name" >/dev/null 2>&1; then
+        echo "The user '$name' already exists on this system."
+        echo "LARBS can install for a user already existing, but it will OVERWRITE any conflicting settings/dotfiles on the user account."
+        read -p "Continue? (y/n): " choice
+	[ "$choice" = "y" -o "$choice" = "Y" ] || exit 1
+        # [[ "$choice" == [yY] ]] || exit 1
+    fi
 }
 
 preinstallmsg() {
-	whiptail --title "Let's get this party started!" --yes-button "Let's go!" \
-		--no-button "No, nevermind!" \
-		--yesno "The rest of the installation will now be totally automated, so you can sit back and relax.\\n\\nIt will take some time, but when done, you can relax even more with your complete system.\\n\\nNow just press <Let's go!> and the system will begin installation!" 13 60 || {
-		clear
-		exit 1
-	}
+    echo "The rest of the installation will now be totally automated, so you can sit back and relax."
+    echo "It will take some time, but when done, you can relax even more with your complete system."
+    read -p "Let's go? (y/n): " choice
+    [ "$choice" = "y" -o "$choice" = "Y" ] || exit 1
+    # [[ "$choice" == [yY] ]] || exit 1
 }
-
 
 adduserandpass() {
     # Adds user `$name` with password $pass1.
-    whiptail --infobox "Adding user \"$name\"..." 7 50
-    useradd -m -s /bin/zsh "$name" >/dev/null 2>&1 ||
-        usermod -a -G sudo "$name" && mkdir -p /home/"$name" && chown "$name":sudo /home/"$name"
+    echo "Adding user \"$name\"..."
+
+    # Create the user with zsh as the default shell
+    useradd -m -s /bin/zsh "$name"
+    if [ $? -ne 0 ]; then
+        echo "Failed to add user."
+        return 1
+    fi
+
+    # Add the user to the sudo group
+    usermod -a -G sudo "$name"
+    if [ $? -ne 0 ]; then
+        echo "Failed to add user to sudo group."
+        return 1
+    fi
+
+    # Create directories and set permissions
+    mkdir -p /home/"$name"
+    chown "$name":sudo /home/"$name"
     export repodir="/home/$name/.local/src"
     mkdir -p "$repodir"
     chown -R "$name":sudo "$(dirname "$repodir")"
+
+    # Set the user password
     echo "$name:$pass1" | chpasswd
+
     unset pass1 pass2
 }
 
-refreshkeys() {
-    case "$(readlink -f /sbin/init)" in
-    *systemd*)
-        whiptail --infobox "Updating package lists..." 7 40
-        apt update >/dev/null 2>&1
-        ;;
-    *)
-        whiptail --infobox "Updating package lists and enabling additional repositories..." 7 40
-        # Add the universe repository if it's not already present
-        add-apt-repository "deb http://mirror.xeonbd.com/ubuntu-archive $(lsb_release -sc) main universe restricted multiverse" -y >/dev/null 2>&1
-        apt update >/dev/null 2>&1
-        ;;
-    esac
-}
 
+# adduserandpass() {
+#     # Adds user `$name` with password $pass1.
+#     echo "Adding user \"$name\"..."
+#     useradd -m -s /bin/zsh "$name" >/dev/null 2>&1 ||
+#         usermod -a -G sudo "$name" && mkdir -p /home/"$name" && chown "$name":sudo /home/"$name"
+#     export repodir="/home/$name/.local/src"
+#     mkdir -p "$repodir"
+#     chown -R "$name":sudo "$(dirname "$repodir")"
+#     echo "$name:$pass1" | chpasswd
+#     unset pass1 pass2
+# }
+
+# refreshkeys() {
+#     case "$(readlink -f /sbin/init)" in
+#     *systemd*)
+#         echo "Updating package lists..."
+#         apt update >/dev/null 2>&1
+#         ;;
+#     *)
+#         echo "Updating package lists and enabling additional repositories..."
+#         # Add the universe repository if it's not already present
+#         add-apt-repository "deb http://mirror.xeonbd.com/ubuntu-archive $(lsb_release -sc) main universe restricted multiverse" -y >/dev/null 2>&1
+#         apt update >/dev/null 2>&1
+#         ;;
+#     esac
+# }
 
 maininstall() {
-	# Installs all needed programs from main repo.
-	whiptail --title "LARBS Installation" --infobox "Installing \`$1\` ($n of $total). $1 $2" 9 70
-	installpkg "$1"
+    # Installs all needed programs from main repo.
+    echo "Installing '$1' ($n of $total). $1 $2"
+    installpkg "$1"
 }
 
 
@@ -104,8 +141,7 @@ gitmakeinstall() {
     progname="${1##*/}"
     progname="${progname%.git}"
     dir="$repodir/$progname"
-    whiptail --title "LARBS Installation" \
-        --infobox "Installing \`$progname\` ($n of $total) via \`git\` and \`make\`. $(basename "$1") $2" 8 70
+    echo "Installing '$progname' ($n of $total) via 'git' and 'make'. $(basename "$1") $2"
     sudo -u "$name" git -C "$repodir" clone --depth 1 --single-branch \
         --no-tags -q "$1" "$dir" ||
         {
@@ -127,50 +163,64 @@ gitmakeinstall() {
 }
 
 pipinstall() {
-	whiptail --title "LARBS Installation" \
-		--infobox "Installing the Python package \`$1\` ($n of $total). $1 $2" 9 70
-	[ -x "$(command -v "pip")" ] || installpkg python3-pip >/dev/null 2>&1
-	yes | pip install "$1"
+    echo "Installing the Python package '$1' ($n of $total). $1 $2"
+    [ -x "$(command -v "pip")" ] || installpkg python3-pip >/dev/null 2>&1
+    yes | pip install "$1"
 }
 
 
 installationloop() {
-	([ -f "$progsfile" ] && cp "$progsfile" /tmp/progs.csv) ||
-		curl -Ls "$progsfile" | sed '/^#/d' >/tmp/progs.csv
-	total=$(wc -l </tmp/progs.csv)
-	while IFS=, read -r tag program comment; do
-		n=$((n + 1))
-		echo "$comment" | grep -q "^\".*\"$" &&
-			comment="$(echo "$comment" | sed -E "s/(^\"|\"$)//g")"
-		case "$tag" in
-		"G") gitmakeinstall "$program" "$comment" ;;
-		"P") pipinstall "$program" "$comment" ;;
-		*) maininstall "$program" "$comment" ;;
-		esac
-	done </tmp/progs.csv
+    ([ -f "$progsfile" ] && cp "$progsfile" /tmp/progs.csv) ||
+        curl -Ls "$progsfile" | sed '/^#/d' >/tmp/progs.csv
+    total=$(wc -l </tmp/progs.csv)
+    while IFS=, read -r tag program comment; do
+        n=$((n + 1))
+        echo "$comment" | grep -q "^\".*\"$" &&
+            comment="$(echo "$comment" | sed -E "s/(^\"|\"$)//g")"
+        echo "Installing $program ($n of $total). $comment"
+        case "$tag" in
+        "G") gitmakeinstall "$program" "$comment" ;;
+        "P") pipinstall "$program" "$comment" ;;
+        *) maininstall "$program" "$comment" ;;
+        esac
+    done </tmp/progs.csv
 }
 
 putgitrepo() {
-	# Downloads a gitrepo $1 and places the files in $2 only overwriting conflicts
-	whiptail --infobox "Downloading and installing config files..." 7 60
-	[ -z "$3" ] && branch="master" || branch="$repobranch"
-	dir=$(mktemp -d)
-	[ ! -d "$2" ] && mkdir -p "$2"
-	chown "$name":wheel "$dir" "$2"
-	sudo -u "$name" git -C "$repodir" clone --depth 1 \
-		--single-branch --no-tags -q --recursive -b "$branch" \
-		--recurse-submodules "$1" "$dir"
-	sudo -u "$name" cp -rfT "$dir" "$2"
+    echo "Downloading and installing config files..."
+    [ -z "$3" ] && branch="master" || branch="$repobranch"
+    dir=$(mktemp -d)
+    [ ! -d "$2" ] && mkdir -p "$2"
+    chown "$name":sudo "$dir" "$2"
+    sudo -u "$name" git -C "$repodir" clone --depth 1 --single-branch --no-tags -q --recursive -b "$branch" --recurse-submodules "$1" "$dir" || {
+        echo "Git clone failed."
+        return 1
+    }
+    sudo -u "$name" cp -rfT "$dir" "$2" || {
+        echo "Failed to copy files."
+        return 1
+    }
 }
 
 
+# putgitrepo() {
+#     echo "Downloading and installing config files..."
+#     [ -z "$3" ] && branch="master" || branch="$repobranch"
+#     dir=$(mktemp -d)
+#     [ ! -d "$2" ] && mkdir -p "$2"
+#     chown "$name":sudo "$dir" "$2"
+#     sudo -u "$name" git -C "$repodir" clone --depth 1 \
+#         --single-branch --no-tags -q --recursive -b "$branch" \
+#         --recurse-submodules "$1" "$dir"
+#     sudo -u "$name" cp -rfT "$dir" "$2"
+# }
+
 vimplugininstall() {
-	# Installs vim plugins.
-	whiptail --infobox "Installing neovim plugins..." 7 60
-	mkdir -p "/home/$name/.config/nvim/autoload"
-	curl -Ls "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim" >  "/home/$name/.config/nvim/autoload/plug.vim"
-	chown -R "$name:wheel" "/home/$name/.config/nvim"
-	sudo -u "$name" nvim -c "PlugInstall|q|q"
+    echo "Installing neovim plugins..."
+    mkdir -p "/home/$name/.config/nvim/autoload"
+    curl -Ls "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim" >  "/home/$name/.config/nvim/autoload/plug.vim"
+    chown -R "$name:sudo" "/home/$name/.config/nvim"
+    sudo -u "$name" nvim -c "PlugInstall|q|q"
 }
 
 
@@ -252,8 +302,11 @@ installffaddons(){
 }
 
 finalize() {
-	whiptail --title "All done!" \
-		--msgbox "Congrats! Provided there were no hidden errors, the script completed successfully and all the programs and configuration files should be in place.\\n\\nTo run the new graphical environment, log out and log back in as your new user, then run the command \"startx\" to start the graphical environment (it will start automatically in tty1).\\n\\n.t Luke" 13 80
+    echo "Congrats! Provided there were no hidden errors, the script completed successfully and all the programs and configuration files should be in place."
+    echo ""
+    echo "To run the new graphical environment, log out and log back in as your new user, then run the command 'startx' to start the graphical environment (it will start automatically in tty1)."
+    echo ""
+    echo "- RMS"
 }
 
 ### THE ACTUAL SCRIPT ###
@@ -284,17 +337,17 @@ preinstallmsg || error "User exited."
 refreshkeys ||
 	error "Error automatically refreshing Arch keyring. Consider doing so manually."
 
+# Install essential packages
 for x in curl ca-certificates build-essential git ntp zsh; do
-	whiptail --title "LARBS Installation" \
-		--infobox "Installing \`$x\` which is required to install and configure other programs." 8 70
-	installpkg "$x"
+    echo "Installing $x which is required to install and configure other programs."
+    apt install -y "$x"
 done
 
-# Synchronize system time.
-whiptail --title "LARBS Installation" \
-	--infobox "Synchronizing system time to ensure successful and secure installation of software..." 8 70
-timedatectl set-ntp true
-
+# Synchronize system time
+echo "Synchronizing system time to ensure successful and secure installation of software..."
+apt install -y ntp
+systemctl enable ntp
+systemctl start ntp
 
 adduserandpass || error "Error adding username and/or password."
 
@@ -355,9 +408,9 @@ EndSection' >/etc/X11/xorg.conf.d/40-libinput.conf
 # all this below to get librewolf installed with add-ons and non-bad settings.
 
 
-install_librewolf
+# install_librewolf
 
-whiptail --infobox "setting browser privacy settings and add-ons..." 7 60
+echo "setting browser privacy settings and add-ons..."
 
 browserdir="/home/$name/.librewolf"
 profilesini="$browserdir/profiles.ini"
