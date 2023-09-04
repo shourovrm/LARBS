@@ -172,61 +172,61 @@ vimplugininstall() {
 }
 
 
+# install_librewolf() {
+#     # Update package list and install required packages
+#     apt update && apt install -y wget gnupg lsb-release apt-transport-https ca-certificates
 
-install_librewolf() {
-    # Update package list and install required packages
-    apt update && apt install -y wget gnupg lsb-release apt-transport-https ca-certificates
+#     # Determine the distribution or use 'focal' as a fallback
+#     distro=$(if echo " una bookworm vanessa focal jammy bullseye vera uma " | grep -q " $(lsb_release -sc) "; then echo $(lsb_release -sc); else echo focal; fi)
 
-    # Determine the distribution or use 'focal' as a fallback
-    distro=$(if echo " una bookworm vanessa focal jammy bullseye vera uma " | grep -q " $(lsb_release -sc) "; then echo $(lsb_release -sc); else echo focal; fi)
+#     # Add the LibreWolf GPG key
+#     wget -O- https://deb.librewolf.net/keyring.gpg | gpg --dearmor -o /usr/share/keyrings/librewolf.gpg
 
-    # Add the LibreWolf GPG key
-    wget -O- https://deb.librewolf.net/keyring.gpg | gpg --dearmor -o /usr/share/keyrings/librewolf.gpg
+#     # Add the LibreWolf APT repository
+#     tee /etc/apt/sources.list.d/librewolf.sources << EOF > /dev/null
+# Types: deb
+# URIs: https://deb.librewolf.net
+# Suites: $distro
+# Components: main
+# Architectures: amd64
+# Signed-By: /usr/share/keyrings/librewolf.gpg
 
-    # Add the LibreWolf APT repository
-    tee /etc/apt/sources.list.d/librewolf.sources << EOF > /dev/null
-Types: deb
-URIs: https://deb.librewolf.net
-Suites: $distro
-Components: main
-Architectures: amd64
-Signed-By: /usr/share/keyrings/librewolf.gpg
-EOF
+# EOF
 
-    # Update package list again
-    apt update
+#     # Update package list again
+#     apt update
 
-    # Install LibreWolf
-    apt install librewolf -y
-}
+#     # Install LibreWolf
+#     apt install librewolf -y
+# }
 
-makeuserjs(){
-	# Get the Arkenfox user.js and prepare it.
-	arkenfox="$pdir/arkenfox.js"
-	overrides="$pdir/user-overrides.js"
-	userjs="$pdir/user.js"
-	ln -fs "/home/$name/.config/firefox/larbs.js" "$overrides"
-	[ ! -f "$arkenfox" ] && curl -sL "https://raw.githubusercontent.com/arkenfox/user.js/master/user.js" > "$arkenfox"
-	cat "$arkenfox" "$overrides" > "$userjs"
-	chown "$name:wheel" "$arkenfox" "$userjs"
-	# Install the updating script.
-	mkdir -p /usr/local/lib /etc/pacman.d/hooks
-	cp "/home/$name/.local/bin/arkenfox-auto-update" /usr/local/lib/
-	chown root:root /usr/local/lib/arkenfox-auto-update
-	chmod 755 /usr/local/lib/arkenfox-auto-update
-	# Trigger the update when needed via a pacman hook.
-	echo "[Trigger]
-Operation = Upgrade
-Type = Package
-Target = firefox
-Target = librewolf
-Target = librewolf-bin
-[Action]
-Description=Update Arkenfox user.js
-When=PostTransaction
-Depends=arkenfox-user.js
-Exec=/usr/local/lib/arkenfox-auto-update" > /etc/pacman.d/hooks/arkenfox.hook
-}
+# makeuserjs(){
+# 	# Get the Arkenfox user.js and prepare it.
+# 	arkenfox="$pdir/arkenfox.js"
+# 	overrides="$pdir/user-overrides.js"
+# 	userjs="$pdir/user.js"
+# 	ln -fs "/home/$name/.config/firefox/larbs.js" "$overrides"
+# 	[ ! -f "$arkenfox" ] && curl -sL "https://raw.githubusercontent.com/arkenfox/user.js/master/user.js" > "$arkenfox"
+# 	cat "$arkenfox" "$overrides" > "$userjs"
+# 	chown "$name:sudo" "$arkenfox" "$userjs"
+# 	# Install the updating script.
+# 	mkdir -p /usr/local/lib /etc/pacman.d/hooks
+# 	cp "/home/$name/.local/bin/arkenfox-auto-update" /usr/local/lib/
+# 	chown root:root /usr/local/lib/arkenfox-auto-update
+# 	chmod 755 /usr/local/lib/arkenfox-auto-update
+# 	# Trigger the update when needed via a pacman hook.
+# 	echo "[Trigger]
+# Operation = Upgrade
+# Type = Package
+# Target = firefox
+# Target = librewolf
+# Target = librewolf-bin
+# [Action]
+# Description=Update Arkenfox user.js
+# When=PostTransaction
+# Depends=arkenfox-user.js
+# Exec=/usr/local/lib/arkenfox-auto-update" > /etc/pacman.d/hooks/arkenfox.hook
+# }
 
 installffaddons(){
 	addonlist="ublock-origin decentraleyes istilldontcareaboutcookies vim-vixen bitwarden libredirect"
@@ -286,15 +286,16 @@ refreshkeys ||
 	error "Error automatically refreshing Arch keyring. Consider doing so manually."
 
 for x in curl ca-certificates build-essential git ntp zsh; do
-	whiptail --title "LARBS Installation" \
-		--infobox "Installing \`$x\` which is required to install and configure other programs." 8 70
+	echo "LARBS Installation" 
+		echo "Installing \`$x\` which is required to install and configure other programs." 
 	installpkg "$x"
 done
 
-# Synchronize system time.
-whiptail --title "LARBS Installation" \
-	--infobox "Synchronizing system time to ensure successful and secure installation of software..." 8 70
-timedatectl set-ntp true
+# Synchronize system time
+echo "Synchronizing system time to ensure successful and secure installation of software..."
+apt install -y ntp
+systemctl enable ntp
+systemctl start ntp
 
 
 adduserandpass || error "Error adding username and/or password."
@@ -356,30 +357,30 @@ EndSection' >/etc/X11/xorg.conf.d/40-libinput.conf
 # all this below to get librewolf installed with add-ons and non-bad settings.
 
 
-install_librewolf
+# install_librewolf
 
-whiptail --infobox "setting browser privacy settings and add-ons..." 7 60
+# echo "setting browser privacy settings and add-ons..." 
 
-browserdir="/home/$name/.librewolf"
-profilesini="$browserdir/profiles.ini"
+# browserdir="/home/$name/.librewolf"
+# profilesini="$browserdir/profiles.ini"
 
-# start librewolf headless so it generates a profile. then get that profile in a variable.
-sudo -u "$name" librewolf --headless >/dev/null 2>&1 &
-sleep 1
-profile="$(sed -n "/default=.*.default-release/ s/.*=//p" "$profilesini")"
-pdir="$browserdir/$profile"
+# # start librewolf headless so it generates a profile. then get that profile in a variable.
+# sudo -u "$name" librewolf --headless >/dev/null 2>&1 &
+# sleep 1
+# profile="$(sed -n "/default=.*.default-release/ s/.*=//p" "$profilesini")"
+# pdir="$browserdir/$profile"
 
-[ -d "$pdir" ] && makeuserjs
+# [ -d "$pdir" ] && makeuserjs
 
-[ -d "$pdir" ] && installffaddons
+# [ -d "$pdir" ] && installffaddons
 
-# kill the now unnecessary librewolf instance.
-pkill -u "$name" librewolf
+# # kill the now unnecessary librewolf instance.
+# pkill -u "$name" librewolf
 
 
 # Allow wheel/sudo users to sudo with password and allow several system commands
 # (like `shutdown` to run without password).
-echo "%sudo ALL=(ALL:ALL) ALL" > /etc/sudoers.d/00-larbs-wheel-can-sudo
+echo "%sudo ALL=(ALL:ALL) ALL" > /etc/sudoers.d/00-larbs-sudo-can-sudo
 echo "%sudo ALL=(ALL:ALL) NOPASSWD: /usr/sbin/shutdown,/usr/sbin/reboot,/usr/bin/systemctl suspend,/usr/sbin/mount,/usr/sbin/umount,/usr/bin/apt update,/usr/bin/apt upgrade,/usr/bin/apt dist-upgrade,/usr/bin/loadkeys" > /etc/sudoers.d/01-larbs-cmds-without-password
 echo "Defaults editor=/usr/bin/nvim" > /etc/sudoers.d/02-larbs-visudo-editor
 
