@@ -83,6 +83,7 @@ G,https://github.com/LukeSmithxyz/mutt-wizard,"is a light-weight terminal-based 
 ,fonts-noto-color-emoji,"is an emoji font."
 ,sc-im,"is an Excel-like terminal spreadsheet manager."
 ,fonts-beng-extra,"Bengali Fonts"
+,xserver-xorg-video-intel,"Video drivers for intel (needed if intel is used)"
 NA,librewolf-bin,"is the default browser of LARBS which also comes with ad-blocking and other sensible and necessary features by default."
 NA,arkenfox-user.js,"provides hardened security settings for Firefox and Librewolf to avoid Mozilla spyware and general web fingerprinting."
 NA,zathura-pdf-mupdf,"allows mupdf pdf compatibility in zathura."
